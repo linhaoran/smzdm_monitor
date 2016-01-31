@@ -6,4 +6,4 @@ threadsafe: true
 
 handlers:
 - url: .*
-  script: helloworld2.app
+  script: smzdm.app
