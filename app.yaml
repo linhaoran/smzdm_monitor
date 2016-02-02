@@ -5,5 +5,18 @@ api_version: 1
 threadsafe: true
 
 handlers:
+- url: /stylesheets
+  static_dir: stylesheets
+
+- url: /smzdm
+  script: smzdm.app
+
+- url: /keywords
+  script: smzdm.app
+
+- url: /hello2
+  script: helloworld2.app
+
 - url: .*
   script: helloworld.app
+
