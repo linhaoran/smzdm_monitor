@@ -5,12 +5,12 @@ import re
 class SMZDMscaner(object):
     def __init__(self, html_text):
         self.text = html_text
+        self.match_keyword = []
         # pass
 
     def SearchForKeywords(self, keywords):
         result = 0
         for keyword in keywords:
-
             result_sub = 1
             for k in keyword:
                 if not k:
@@ -19,11 +19,14 @@ class SMZDMscaner(object):
             else:
                 if not k:
                     result_sub = 0
+            if result_sub:
+                self.match_keyword.append(keyword)
             result += result_sub
         return result
 
 
 if __name__ == "__main__":
+    import json
     keywords_list = [
         ['大王', '纸尿裤'],
         ['babybjorn', 'one'],
@@ -35,7 +38,7 @@ if __name__ == "__main__":
         ['ERGObaby', '360'],
         ['mountain', 'buggy', 'nano'],
         ['xbox'],
-        [''],
+        ['预定'],
         [''],
         [''],
         [''],
@@ -79,3 +82,4 @@ if __name__ == "__main__":
         smzdm = SMZDMscaner(item_title[i])
         if smzdm.SearchForKeywords(keywords_list):
             print(item_title[i])  # , item_link[i])
+            print(json.dumps(smzdm.match_keyword, encoding='utf8', ensure_ascii=False))

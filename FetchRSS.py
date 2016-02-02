@@ -36,7 +36,7 @@ class FetchRSS(object):
                         # print(item.tag)
                         if item.tag == 'title':
                             # print(item.text)
-                            item_title.append(item.text.encode('utf8'))
+                            item_title.append(item.text)
                         elif item.tag == 'link':
                             item_link.append(item.text)
         # print(item_title)

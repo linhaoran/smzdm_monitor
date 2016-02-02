@@ -1,0 +1,29 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <link type="text/css" rel="stylesheet" href="stylesheets/main.css"/>
+</head>
+<body>
+<form action="list" method="post">
+    <table>
+        <thead>
+        <td>Keywords</td>
+        <td colspan="2">Action</td>
+        </thead>
+        <tbody>
+        {% for keyword in keywords %}
+        <tr>
+            {% if keyword %}
+            <td> [ {% for k in keyword %} {{ k }} {% endfor %} ]</td>
+            <td><input type="submit" value="Edit"/></td>
+            <td><input type="submit" value="Delete"/></td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <input type="submit" value="Add"/>
+</form>
+</body>
+</html>
+
