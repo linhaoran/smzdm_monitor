@@ -23,7 +23,6 @@ class FetchRSS(object):
         # print(self.tree, self.rss)
 
     def get_item_list(self):
-        item_list = []
         item_title = []
         item_link = []
 

@@ -7,7 +7,7 @@ import webapp2
 import os
 from google.appengine.ext.webapp import template
 import smtp2
-
+# import pytz
 
 class SmzdmItem(db.Model):
     title = db.StringProperty()
@@ -34,23 +34,14 @@ class FetchRSS2(object):
     def __init__(self, url):
         self.url = url
         self.rss = ET.fromstring(self.url)
-        self.item_count = 0
-        self.item_list = []
 
-    def get_item_list(self, dbname):
+    def get_item_list(self, dbname, start_dt=dt.datetime(2016,1,1) , end_dt=dt.datetime(2020,12,31)):
         for channel in self.rss:
-            # print(channel.tag, channel.text)
             for items in channel:
-                # print(items.tag)
                 if items.tag == 'item':
-                    # smzdmitem_name = 'smzdmtest'
                     t = SmzdmItem(parent=smzdmitem_key(dbname))
-                    # self.item_list.append(t)
-                    # self.item
                     for item in items:
-                        # print(item.tag)
                         if item.tag == 'title':
-                            # print(item.text)
                             t.title = item.text
                         elif item.tag == 'link':
                             t.link = item.text
@@ -61,13 +52,17 @@ class FetchRSS2(object):
                             t.desc = item.text
                         elif item.tag == "{http://purl.org/rss/1.0/modules/content/}encoded":
                             t.content = item.text
-                    t.put()
-                    # print(t.title)
+                    if start_dt <= t.dt < end_dt:
+                        t.put()
 
 
 def GetDataDTSection(now, period=15):
-    start_time = dt.datetime(now.year, now.month, now.day, now.hour, now.minute) - dt.timedelta(minutes=period)
-    end_time = dt.datetime(now.year, now.month, now.day, now.hour, now.minute) + dt.timedelta(minutes=0)
+    # local=pytz.timezone("Asia/Shanghai")
+    # start_time = local.localize(dt.datetime(now.year, now.month, now.day, now.hour, now.minute) - dt.timedelta(minutes=period), is_dst=None)
+    # end_time = local.localize(dt.datetime(now.year, now.month, now.day, now.hour, now.minute) + dt.timedelta(minutes=0))
+    utc_8 = dt.timedelta(hours=8)
+    start_time = dt.datetime(now.year, now.month, now.day, now.hour, now.minute) + utc_8 - dt.timedelta(minutes=period)
+    end_time = dt.datetime(now.year, now.month, now.day, now.hour, now.minute) + utc_8 + dt.timedelta(minutes=0)
     return start_time, end_time
 
 

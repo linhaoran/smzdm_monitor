@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 import webapp2
-import SMZDMscaner as sz
-import FetchRSS as fr
+import SMZDMscaner as SZ
+import FetchRSS2 as FR
 import urllib2 as ureq
 import Keywords
 import os
 from google.appengine.ext.webapp import template
+import smtp2
+import datetime as dt
+
 
 
 class KeywordsHandler(webapp2.RequestHandler):
@@ -28,6 +31,41 @@ class KeywordsHandler(webapp2.RequestHandler):
         pass
 
 
+class NotifyHandler(webapp2.RequestHandler):
+    def get(self):
+        smzdmitem_name = "smzdmtest"
+        start_dt, end_dt = FR.GetDataDTSection(dt.datetime.now(), period=120)
+
+        rss_url = 'http://feed.smzdm.com'  # 优惠精选
+        opener = ureq.build_opener()
+        opener.addheaders = [('User-agent', 'Mozilla/5.0 (Macintosh Intel Mac OS X 10_10_2) \
+        AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.76 Safari/537.36')]
+        rss_file = opener.open(rss_url)
+        rss_text = rss_file.read()
+
+        # rss_file = open('rss.txt')
+        # rss_text = rss_file.read()
+        # # 数据更新开关
+        FR.FetchRSS2(rss_text).get_item_list(smzdmitem_name, start_dt, end_dt)
+
+        smzdmitems_query = FR.SmzdmItem.all().ancestor(FR.smzdmitem_key(smzdmitem_name)).order('-dt')
+        query = smzdmitems_query.fetch(smzdmitems_query.count())
+
+        # start_dt, end_dt = FR.GetDataDTSection(dt.datetime(2016, 1, 20, 20, 15), 120)
+        # self.response.out.write("Start_dt is: {0} End_dt is {1}".format(start_dt, end_dt))
+        # self.response.out.write(smtp2.create_email_body(smzdmitem_name, start_dt, end_dt))
+
+
+        self.response.out.write("Start_dt is: {0} End_dt is {1}".format(start_dt, end_dt))
+        self.response.out.write(smtp2.create_email_body(smzdmitem_name, start_dt, end_dt))
+
+        body_html = smtp2.create_email_body(smzdmitem_name, start_dt, end_dt)
+        smtp2.send_email(body=body_html, send_ind=True)
+
+        rss_file.close()
+
+
+
 class MainHandler(webapp2.RequestHandler):
     def get(self):
         # rss_url = 'http://feed.smzdm.com'  # 优惠精选
@@ -39,14 +77,14 @@ class MainHandler(webapp2.RequestHandler):
 
         rss_file = open('rss.txt')
         rss_text = rss_file.read()
-        tmp = fr.FetchRSS(rss_text)
+        tmp = FR.FetchRSS(rss_text)
 
         keywords_list = Keywords.Keywords().keywords_list
 
         (item_title, item_link) = tmp.get_item_list()
 
         for i in range(len(item_title)):
-            smzdm = sz.SMZDMscaner(item_title[i])
+            smzdm = SZ.SMZDMscaner(item_title[i])
             if smzdm.SearchForKeywords(keywords_list):
                 # print(json.dumps((item_title[i], item_link[i]), encoding='utf8', ensure_ascii=False))
                 self.response.write("<p>")
@@ -58,8 +96,9 @@ class MainHandler(webapp2.RequestHandler):
 
 
 route = [
-    ('/smzdm', MainHandler),
     ('/keywords', KeywordsHandler),
+    ('/notify', NotifyHandler),
+    ('/smzdm', MainHandler),
 ]
 
 app = webapp2.WSGIApplication(routes=route, debug=True)

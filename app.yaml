@@ -13,9 +13,10 @@ handlers:
 - url: /test2
   script: FetchRSS2.app
 
+- url: /notify
+  script: smzdm.app
 - url: /smzdm
   script: smzdm.app
-
 - url: /keywords
   script: smzdm.app
 
