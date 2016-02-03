@@ -1,4 +1,4 @@
 cron:
 - description: Notify me every 15 minites
   url: /notify
-  schedule: every 15 minites
+  schedule: every 15 mins

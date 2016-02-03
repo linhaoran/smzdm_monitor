@@ -10,7 +10,6 @@ import smtp2
 import datetime as dt
 
 
-
 class KeywordsHandler(webapp2.RequestHandler):
     def get(self):
         # self.response.write("keyword.html")
@@ -36,34 +35,38 @@ class NotifyHandler(webapp2.RequestHandler):
         smzdmitem_name = "smzdmtest"
         start_dt, end_dt = FR.GetDataDTSection(dt.datetime.now(), period=120)
 
-        rss_url = 'http://feed.smzdm.com'  # 优惠精选
-        opener = ureq.build_opener()
-        opener.addheaders = [('User-agent', 'Mozilla/5.0 (Macintosh Intel Mac OS X 10_10_2) \
-        AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.76 Safari/537.36')]
-        rss_file = opener.open(rss_url)
-        rss_text = rss_file.read()
+        # rss_url = 'http://feed.smzdm.com'  # 优惠精选
+        # rss_url = 'http://faxian.smzdm.com/feed'  # 发现
+        rss_url_list = [
+            'http://feed.smzdm.com',
+            'http://faxian.smzdm.com/feed'
+        ]
+        for rss_url in rss_url_list:
+            opener = ureq.build_opener()
+            opener.addheaders = [('User-agent', 'Mozilla/5.0 (Macintosh Intel Mac OS X 10_10_2) \
+                                AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.76 Safari/537.36')]
+            rss_file = opener.open(rss_url)
+            rss_text = rss_file.read()
 
-        # rss_file = open('rss.txt')
-        # rss_text = rss_file.read()
-        # # 数据更新开关
-        FR.FetchRSS2(rss_text).get_item_list(smzdmitem_name, start_dt, end_dt)
+            # rss_file = open('rss.txt')
+            # rss_text = rss_file.read()
+            # # 数据更新开关
+            FR.FetchRSS2(rss_text).get_item_list(smzdmitem_name, start_dt, end_dt)
 
-        smzdmitems_query = FR.SmzdmItem.all().ancestor(FR.smzdmitem_key(smzdmitem_name)).order('-dt')
-        query = smzdmitems_query.fetch(smzdmitems_query.count())
+            smzdmitems_query = FR.SmzdmItem.all().ancestor(FR.smzdmitem_key(smzdmitem_name)).order('-dt')
+            # query = smzdmitems_query.fetch(smzdmitems_query.count())
 
-        # start_dt, end_dt = FR.GetDataDTSection(dt.datetime(2016, 1, 20, 20, 15), 120)
-        # self.response.out.write("Start_dt is: {0} End_dt is {1}".format(start_dt, end_dt))
-        # self.response.out.write(smtp2.create_email_body(smzdmitem_name, start_dt, end_dt))
+            # start_dt, end_dt = FR.GetDataDTSection(dt.datetime(2016, 1, 20, 20, 15), 120)
+            # self.response.out.write("Start_dt is: {0} End_dt is {1}".format(start_dt, end_dt))
+            # self.response.out.write(smtp2.create_email_body(smzdmitem_name, start_dt, end_dt))
 
+            self.response.out.write("Start_dt is: {0} End_dt is {1}".format(start_dt, end_dt))
+            self.response.out.write(smtp2.create_email_body(smzdmitem_name, start_dt, end_dt))
 
-        self.response.out.write("Start_dt is: {0} End_dt is {1}".format(start_dt, end_dt))
-        self.response.out.write(smtp2.create_email_body(smzdmitem_name, start_dt, end_dt))
+            body_html = smtp2.create_email_body(smzdmitem_name, start_dt, end_dt)
+            smtp2.send_email(subject="SMZDM Notification: " + rss_url, body=body_html, send_ind=True)
 
-        body_html = smtp2.create_email_body(smzdmitem_name, start_dt, end_dt)
-        smtp2.send_email(body=body_html, send_ind=True)
-
-        rss_file.close()
-
+            rss_file.close()
 
 
 class MainHandler(webapp2.RequestHandler):
