@@ -8,6 +8,11 @@ handlers:
 - url: /stylesheets
   static_dir: stylesheets
 
+- url: /test
+  script: FetchRSS2.app
+- url: /test2
+  script: FetchRSS2.app
+
 - url: /smzdm
   script: smzdm.app
 
@@ -17,6 +22,6 @@ handlers:
 - url: /hello2
   script: helloworld2.app
 
-- url: .*
+- url: /.*
   script: helloworld.app
 

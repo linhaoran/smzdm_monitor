@@ -17,6 +17,7 @@ class Greeting(db.Model):
 
 
 def guestbook_key(guestbook_name=None):
+    print(db.Key.from_path("Guestbook", guestbook_name or 'default_guestbook'))
     return db.Key.from_path("Guestbook", guestbook_name or 'default_guestbook')
 
 
@@ -41,7 +42,7 @@ class MainPage(webapp2.RequestHandler):
         }
 
         path = os.path.join(os.path.dirname(__file__), 'templates/index.html')
-        print(path)
+        # print(path)
         # self.response.out.write(template.render('templates/index.html', template_values))
         self.response.out.write(template.render(path, template_values))
 

@@ -1,50 +1,44 @@
 # coding: utf-8
-import smtplib
-from email.mime.text import MIMEText
 
 
-def create_email_body():
-    import SMZDMscaner as SZ
-    import FetchRSS as FR
+def create_email_body(dbname, start_dt, end_dt):
+    import FetchRSS2 as FR
     import Keywords
-    import json
-    import smtp2
+    import SMZDMscaner as SZ
+    import datetime as dt
 
-    rss_file = open('rss.txt')
-    rss_text = rss_file.read()
-    tmp = FR.FetchRSS(rss_text)
-
+    # smzdmitems_query = FR.SmzdmItem.all().ancestor(FR.smzdmitem_key(dbname)).order('-dt')
+    smzdmitems_query = FR.SmzdmItem.all().ancestor(FR.smzdmitem_key(dbname)).filter("dt >=", start_dt).filter('dt <', end_dt).order('-dt')
+    query = smzdmitems_query.fetch(smzdmitems_query.count())
     keywords_list = Keywords.Keywords().keywords_list
 
-    (item_title, item_link) = tmp.get_item_list()
+    # query2 = smzdmitems_query.filter("title like ", '%xbox%')
 
+    # body_html = u"<p>========================================</p>"
     body_html = u""
-    subject = []
-    for i in range(len(item_title)):
-        smzdm = SZ.SMZDMscaner(item_title[i])
-        if smzdm.SearchForKeywords(keywords_list):
-            print(json.dumps((item_title[i], item_link[i]), encoding='utf8', ensure_ascii=False))
-            print(json.dumps(smzdm.match_keyword, encoding='utf8', ensure_ascii=False))
-            subject.append(' '.join([''.join(x) for x in smzdm.match_keyword]))
-            print(' '.join([''.join(x) for x in smzdm.match_keyword]))
-            body_html += u'''
-                <H3>{0}</H3>
-                <p><a href="{1}">直达链接</a></p>
-                <p><b>简介：</b>{2}aaaaaaaaaaaaaa</p>
-                <p><b>详细介绍：</b>{3}bbbbbbbbbbbbb</p>
-                <p></p>'''.format(item_title[i], item_link[i], "", "")
+    for q in query:
+        sz = SZ.SMZDMscaner(q.title)
+        if sz.SearchForKeywords(keywords_list):
+            if q.keyword:
+                body_html += u'''<H3>{0}<a href="{1}">直达链接</a></H3>
+                                 <p><b>简介：</b>{2}</p>
+                                 <p><b>命中关键字：</b>{3}  <b>发布时间：</b><i>{4}</i></p>
+                                 <p></p>'''.format(q.title, q.link, q.desc, q.keyword, q.dt)
+            else:
+                body_html += u'''<H3>{0}<a href="{1}">直达链接</a></H3>
+                                 <p><b>简介：</b>{2}  <b>发布时间：</b><i>{3}</i></p>
+                                 <p></p>'''.format(q.title, q.link, q.desc, q.dt)
+            body_html += u"<p>----------------------------------------</p>"
 
-    print(json.dumps(u"【" + u'】,【'.join(subject) + u"】", encoding='utf8', ensure_ascii=False))
-    smtp2.send_email(subject=' '.join(u"【" + u'】,【'.join(subject) + u"】"),
-                     body=body_html, send_ind=False)
-
-    rss_file.close()
     return body_html
 
 
 def send_email(sender="linhaoran_kindle@163.com", pwd="10131201",
                to="linhaoran_smzdm@163.com", cc="", subject="SMZDM Notification",
                body='', send_ind=False):
+    import smtplib
+    from email.mime.text import MIMEText
+
     # try:
     msg = MIMEText(body, 'html', 'utf8')
     msg['FROM'] = sender
@@ -64,14 +58,16 @@ def send_email(sender="linhaoran_kindle@163.com", pwd="10131201",
 
 
 if __name__ == "__main__":
-    body_html = u'''
-            <H1>值得买提醒</H1>
-            <p></p>
-           '''
+    # body_html = u'''
+    #         <H1>值得买提醒</H1>
+    #         <p></p>
+    #        '''
     # send_email(sender="linhaoran_kindle@163.com",
     #            pwd="10131201",
     #            to="linhaoran_smzdm@163.com",
     #            # cc="haoran.lin@icbc.com.cn",
     #            subject="关键字：",
     #            body=body_html)
-    send_email(subject='abc', body=body_html)
+    # send_email(subject='abc', body=body_html)
+
+    create_email_body("smzdmtest")

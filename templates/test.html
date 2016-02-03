@@ -1,0 +1,21 @@
+<html>
+<head>
+    <link type="text/css" rel="stylesheet" href="/stylesheets/main.css"/>
+</head>
+<body>
+<p>===============================================</p>
+{% for greeting in query %}
+    <b>{{ greeting.title }}</b>  【<a href="{{ greeting.link }}">直达链接</a>】
+    <p>{{ greeting.desc }}</p>
+
+    {% if greeting.keyword %}
+        <p>命中关键字：{{ greeting.keyword }}
+    {% else %}
+        <p>
+    {% endif %}
+
+    <i>datetime: {{ greeting.dt }}</i></p>
+    <p>-----------------------------------------------</p>
+{% endfor %}
+</body>
+</html>

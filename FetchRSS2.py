@@ -3,64 +3,31 @@
 import xml.etree.ElementTree as ET
 import datetime as dt
 from google.appengine.ext import db
+import webapp2
+import os
+from google.appengine.ext.webapp import template
+import smtp2
 
 
 class SmzdmItem(db.Model):
-    # info = {
-    #     title: '',
-    #     link: '',
-    #     dt: '',
-    #     desc: '',
-    #     content: '',
-    #     price: '',
-    #     cheap_ind: ''
-    # }
     title = db.StringProperty()
     link = db.URLProperty()
-    dt = db.DateTimeProperty()
-    desc = db.StringProperty()
-    content = db.StringProperty()
+    dt = db.DateTimeProperty(auto_now_add=True)
+    desc = db.StringProperty(multiline=True)
+    content = db.TextProperty()
     price = db.FloatProperty(default=0.0)
     cheap = db.BooleanProperty(default=False)
+    keyword = db.StringListProperty()
 
 
 class Keywords(db.Model):
-    # title = db.ListProperty()
-    price = db.FloatProperty(default=0.0)
+    keyword_list = db.StringListProperty()
+    expect_price = db.FloatProperty(default=0.0)
 
 
-class SmzdmRssItem(object):
-    def __init__(self):
-        self.title = ''
-        self.link = ''
-        self.dt = ''
-        self.desc = ''
-        self.content = ''
-
-    def __set__(self, instance, value):
-        if instance == 'pubDate':
-            self.dt == dt.datetime.strptime(value, "%a, %d %b %Y %H:%M:%S")
-        elif instance == "title":
-            self.title = value
-        elif instance == "link":
-            self.link = value
-        elif instance == "description":
-            self.desc = value
-        elif instance == "{http://purl.org/rss/1.0/modules/content/}encoded":
-            self.content = value
-
-    def __get__(self, instance, owner):
-        if instance == 'dt':
-            # dt.datetime.strptime(item.text, "%a, %d %b %Y %H:%M:%S").strftime(
-            # '%Y-%m-%d %H:%M:%S'))
-            return self.dt.strf('%Y %m %d')
-        else:
-            # return  self.title
-            pass
-
-    def show_item_info(self):
-        pass
-        return
+def smzdmitem_key(smzdmitem_name=None):
+    print(db.Key.from_path("smzdmitem_category", smzdmitem_name or 'default_itemcategory'))
+    return db.Key.from_path("smzdmitem_category", smzdmitem_name or 'default_itemcategory')
 
 
 class FetchRSS2(object):
@@ -70,15 +37,15 @@ class FetchRSS2(object):
         self.item_count = 0
         self.item_list = []
 
-    def get_item_list(self):
+    def get_item_list(self, dbname):
         for channel in self.rss:
             # print(channel.tag, channel.text)
             for items in channel:
                 # print(items.tag)
                 if items.tag == 'item':
-                    self.item_count += 1
-                    t = SmzdmRssItem()
-                    self.item_list.append(t)
+                    # smzdmitem_name = 'smzdmtest'
+                    t = SmzdmItem(parent=smzdmitem_key(dbname))
+                    # self.item_list.append(t)
                     # self.item
                     for item in items:
                         # print(item.tag)
@@ -94,52 +61,74 @@ class FetchRSS2(object):
                             t.desc = item.text
                         elif item.tag == "{http://purl.org/rss/1.0/modules/content/}encoded":
                             t.content = item.text
+                    t.put()
+                    # print(t.title)
 
 
-def GetDataDTSection(now):
-    start_time = dt.datetime(now.year, now.month, now.day, now.hour, now.minute) - dt.timedelta(minutes=10)
+def GetDataDTSection(now, period=15):
+    start_time = dt.datetime(now.year, now.month, now.day, now.hour, now.minute) - dt.timedelta(minutes=period)
     end_time = dt.datetime(now.year, now.month, now.day, now.hour, now.minute) + dt.timedelta(minutes=0)
     return start_time, end_time
 
 
+class TestHandler(webapp2.RequestHandler):
+    def get(self):
+        # smzdmitem_name = self.request.get("smzdmitem_category")
+        smzdmitem_name = "smzdmtest"
+        smzdm = SmzdmItem(parent=smzdmitem_key(smzdmitem_name))
+
+        url = open('rss.txt')
+        # 数据更新开关
+        # FetchRSS2(url.read()).get_item_list(smzdmitem_name)
+
+        smzdmitems_query = SmzdmItem.all().ancestor(smzdmitem_key(smzdmitem_name)).order('-dt')
+        query = smzdmitems_query.fetch(smzdmitems_query.count())
+        template_values = {
+            'query': query,
+        }
+        path = os.path.join(os.path.dirname(__file__), 'templates/test.html')
+        self.response.out.write(template.render(path, template_values))
+
+
+class TestHandler2(webapp2.RequestHandler):
+    def get(self):
+        # smzdmitem_name = self.request.get("smzdmitem_category")
+        smzdmitem_name = "smzdmtest"
+        smzdm = SmzdmItem(parent=smzdmitem_key(smzdmitem_name))
+
+        url = open('rss.txt')
+        # # 数据更新开关
+        # FetchRSS2(url.read()).get_item_list(smzdmitem_name)
+
+        smzdmitems_query = SmzdmItem.all().ancestor(smzdmitem_key(smzdmitem_name)).order('-dt')
+        query = smzdmitems_query.fetch(smzdmitems_query.count())
+        template_values = {
+            'query': query,
+        }
+        # path = os.path.join(os.path.dirname(__file__), 'templates/test.html')
+        start_dt, end_dt = GetDataDTSection(dt.datetime(2016, 1, 20, 20, 15), 120)
+        # start_dt, end_dt = GetDataDTSection(dt.datetime.now())
+        self.response.out.write("Start_dt is: {0} End_dt is {1}".format(start_dt, end_dt))
+        self.response.out.write(smtp2.create_email_body(smzdmitem_name, start_dt, end_dt))
+
+
+app = webapp2.WSGIApplication([
+    ('/test', TestHandler),
+    ('/test2', TestHandler2),
+], debug=True)
+
 if __name__ == "__main__":
-    url = open('rss.txt')
-
-    # sitem= SmzdmRssItem()
-    # sitem.title = 'abc'
-    # sitem.dt = dt.datetime(2015,12,12,1,1,1)
-    # print(sitem.title)
-    # print(sitem.dt)
-
-
-    tmp = FetchRSS2(url.read())
-    tmp.get_item_list()
-
-    for i in range(tmp.item_count):
-        t = tmp.item_list[i]
-        # print(t.title)
-        # print(t.link, str(t.dt))
-        # print(t.desc)
-        # print("")
-
-    a = SmzdmItem()
-    a.title = 'abc'
-    a.dt = dt.datetime(2015, 1, 1, 12, 21, 0)
-    b = SmzdmItem()
-    b.title = 'def'
-    b.dt = dt.datetime(2016, 1, 1, 12, 21, 0)
-    # print(SmzdmItem.all().filter('title = ', "abc").count(1))
-
+    app.run()
+    # url = open('rss.txt')
+    #
     # tmp = FetchRSS2(url.read())
     # tmp.get_item_list()
     #
-    # print(json.dumps(tmp.item_title, encoding='utf8', ensure_ascii=False))
-    # print(json.dumps(tmp.item_link, encoding='utf8', ensure_ascii=False))
-    # print(json.dumps(str(tmp.item_dt1), encoding='utf8', ensure_ascii=False))
-    # print(json.dumps(str(tmp.item_dt2), encoding='utf8', ensure_ascii=False))
-    # print(json.dumps(tmp.item_desc, encoding='utf8', ensure_ascii=False))
-    # print(json.dumps(tmp.item_content, encoding='utf8', ensure_ascii=False))
+    # q = SmzdmItem.all().ancestor(smzdmitem_key(smzdmitem_name)).order('-dt')
+    # # q = db.Query(SmzdmItem)
+    # q2 = q.fetch(q.count())
     #
-    # now_dt = dt.datetime.now()
-    # start_dt, end_dt = GetDataDTSection(now_dt)
-    # print('Now is {0}, Start_dt is {1}, End_dt is {2}'.format(now_dt, start_dt, end_dt))
+    # for p in q2:
+    #     print p.title
+    #
+    #     # print(SmzdmItem.all().filter('title = ', "abc"))
