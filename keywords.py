@@ -47,7 +47,7 @@ class Keywords(object):
 
 if __name__ == '__main__':
     a = Keywords()
-    a.add([u'xbox']).save()
+    a.add([u'移动端']).save()
     print(json.dumps(a.keywords_list, encoding='utf8', ensure_ascii=False))
 
 
