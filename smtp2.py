@@ -3,14 +3,14 @@
 
 def create_email_body(dbname, start_dt, end_dt):
     import FetchRSS2 as FR
-    import Keywords
+    import keywords
     import SMZDMscaner as SZ
     import datetime as dt
 
     # smzdmitems_query = FR.SmzdmItem.all().ancestor(FR.smzdmitem_key(dbname)).order('-dt')
     smzdmitems_query = FR.SmzdmItem.all().ancestor(FR.smzdmitem_key(dbname)).filter("dt >=", start_dt).filter('dt <', end_dt).order('-dt')
     query = smzdmitems_query.fetch(smzdmitems_query.count())
-    keywords_list = Keywords.Keywords().keywords_list
+    keywords_list = keywords.Keywords().keywords_list
 
     # query2 = smzdmitems_query.filter("title like ", '%xbox%')
 

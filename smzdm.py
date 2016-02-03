@@ -3,7 +3,7 @@ import webapp2
 import SMZDMscaner as SZ
 import FetchRSS2 as FR
 import urllib2 as ureq
-import Keywords
+import keywords
 import os
 from google.appengine.ext.webapp import template
 import smtp2
@@ -14,7 +14,7 @@ class KeywordsHandler(webapp2.RequestHandler):
     def get(self):
         # self.response.write("keyword.html")
 
-        keywords_list = Keywords.Keywords().keywords_list
+        keywords_list = keywords.Keywords().keywords_list
         template_values = {
             'keywords': keywords_list,
             # 'url': url,
@@ -82,7 +82,7 @@ class MainHandler(webapp2.RequestHandler):
         rss_text = rss_file.read()
         tmp = FR.FetchRSS(rss_text)
 
-        keywords_list = Keywords.Keywords().keywords_list
+        keywords_list = keywords.Keywords().keywords_list
 
         (item_title, item_link) = tmp.get_item_list()
 
