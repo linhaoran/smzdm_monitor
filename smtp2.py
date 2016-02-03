@@ -33,8 +33,8 @@ def create_email_body(dbname, start_dt, end_dt):
     return body_html
 
 
-def send_email(sender="linhaoran_kindle@163.com", pwd="10131201",
-               to="linhaoran_smzdm@163.com", cc="", subject="SMZDM Notification",
+def send_email(sender="", pwd="",
+               to="", cc="", subject="SMZDM Notification",
                body='', send_ind=False):
     import smtplib
     from email.mime.text import MIMEText
